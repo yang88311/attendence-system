@@ -1,23 +1,35 @@
 package com.example.attendance.controller;
 
-import com.example.attendance.entity.AttendanceRecord;
 import com.example.attendance.common.Result;
+import com.example.attendance.entity.AttendanceRecord;
 import com.example.attendance.entity.Student;
+import com.example.attendance.service.StudentService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
+
 import java.util.ArrayList;
+import java.util.List;
 
 @RestController
 @RequestMapping("/student")
 public class StudentController {
+
+    // 注入 Service 层（用于新增的分层架构功能）
+    @Autowired
+    private StudentService studentService;
+
+    // ==================== 你原来的接口（保留不变） ====================
+
     @GetMapping("/info")
-    public String getStudentInfo(){
+    public String getStudentInfo() {
         return "姓名：白景一  学号：42411045  班级：计科2班";
     }
+
     @PostMapping("/attendance")
-    public String attendence(@RequestBody String studentId){
+    public String attendance(@RequestBody String studentId) {
         return "学号为 " + studentId + " 的学生打卡成功！";
     }
+
     @GetMapping("/courses")
     public List<String> getCourses() {
         List<String> courses = new ArrayList<>();
@@ -26,31 +38,38 @@ public class StudentController {
         courses.add("数据库原理");
         courses.add("操作系统");
         courses.add("计算机网络");
-        return courses;}
-    // 任务一：学生信息查询接口（路径参数）
-    @GetMapping("/info/{studentId}")
-    public Result<Student> getStudentInfo(@PathVariable String studentId) {
-        // 1. 模拟根据 studentId 查询到的学生数据（后续可替换为数据库查询）
-        Student student = new Student();
-        student.setStudentId(studentId);
-        student.setName("白景一");
-        student.setClassName("计科2班");
-        student.setAge(20);
+        return courses;
+    }
 
-        // 2. 封装成统一响应格式返回
+    // ==================== 新增：分层架构任务接口 ====================
+
+    // 任务一：学生信息查询接口（路径参数）- 调用 Service 层
+    @GetMapping("/info/{studentId}")
+    public Result<Student> getStudentInfoById(@PathVariable String studentId) {
+        Student student = studentService.getStudentById(studentId);
+        if (student == null) {
+            return Result.error("学生不存在");
+        }
         return Result.success(student);
     }
 
-    // 任务二：查询参数获取学生列表
+    // 任务二：学生列表查询接口（查询参数）- 调用 Service 层
     @GetMapping("/list")
     public Result<List<Student>> getStudentList(
             @RequestParam String className,
             @RequestParam(defaultValue = "1") int page) {
-
-        List<Student> students = new ArrayList<>();
-        students.add(new Student("42411045", "白景一", className, 20));
-        students.add(new Student("42411046", "李四", className, 19));
+        List<Student> students = studentService.getStudentsByClass(className);
         return Result.success(students);
     }
 
+    // 任务三：学生新增接口（POST）- 调用 Service 层
+    @PostMapping("/create")
+    public Result<String> createStudent(@RequestBody Student student) {
+        try {
+            String result = studentService.createStudent(student);
+            return Result.success(result);
+        } catch (RuntimeException e) {
+            return Result.error(e.getMessage());
+        }
+    }
 }
