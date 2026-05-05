@@ -1,48 +1,53 @@
 package com.example.attendance.entity;
 
+import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "student")
 public class Student {
-    // 属性：学号、姓名、班级、年龄（使用包装类）
+
+    @Id
+    @Column(name = "student_id", length = 20, nullable = false)
     private String studentId;
-    private String name;
+
+    @Column(name = "student_name", length = 50, nullable = false)
+    private String studentName;
+
+    @Column(name = "gender", length = 2)
+    private String gender;
+
+    @Column(name = "class_name", length = 50, nullable = false)
     private String className;
-    private Integer age;
-    // 无参构造器（必须）
-    public Student() {}
-    // 全参构造器（可选，方便创建对象）
-    public Student(String studentId, String name, String className, Integer age) {
-        this.studentId = studentId;
-        this.name = name;
-        this.className = className;
-        this.age = age;
-    }
-    // Getter 和 Setter 方法（手动编写，不用 Lombok）
-    public String getStudentId() {
-        return studentId;
-    }
-    public void setStudentId(String studentId) {
-        this.studentId = studentId;
-    }
-    public String getName() {
-        return name;
-    }
 
-    public void setName(String name) {
-        this.name = name;
-    }
+    @Column(name = "phone", length = 20)
+    private String phone;
 
-    public String getClassName() {
-        return className;
-    }
+    @Column(name = "email", length = 100)
+    private String email;
 
-    public void setClassName(String className) {
-        this.className = className;
-    }
+    @Column(name = "create_time")
+    private LocalDateTime createTime;
 
-    public Integer getAge() {
-        return age;
-    }
+    // Getters and Setters
+    public String getStudentId() { return studentId; }
+    public void setStudentId(String studentId) { this.studentId = studentId; }
 
-    public void setAge(Integer age) {
-        this.age = age;
-    }
+    public String getStudentName() { return studentName; }
+    public void setStudentName(String studentName) { this.studentName = studentName; }
+
+    public String getGender() { return gender; }
+    public void setGender(String gender) { this.gender = gender; }
+
+    public String getClassName() { return className; }
+    public void setClassName(String className) { this.className = className; }
+
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
+
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
+
+    public LocalDateTime getCreateTime() { return createTime; }
+    public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
 }

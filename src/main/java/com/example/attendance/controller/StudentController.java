@@ -14,7 +14,6 @@ import java.util.List;
 @RequestMapping("/student")
 public class StudentController {
 
-    // 注入 Service 层（用于新增的分层架构功能）
     @Autowired
     private StudentService studentService;
 
@@ -43,7 +42,7 @@ public class StudentController {
 
     // ==================== 新增：分层架构任务接口 ====================
 
-    // 任务一：学生信息查询接口（路径参数）- 调用 Service 层
+    // 任务一：学生信息查询接口（路径参数）
     @GetMapping("/info/{studentId}")
     public Result<Student> getStudentInfoById(@PathVariable String studentId) {
         Student student = studentService.getStudentById(studentId);
@@ -53,7 +52,7 @@ public class StudentController {
         return Result.success(student);
     }
 
-    // 任务二：学生列表查询接口（查询参数）- 调用 Service 层
+    // 任务二：学生列表查询接口（查询参数）
     @GetMapping("/list")
     public Result<List<Student>> getStudentList(
             @RequestParam String className,
@@ -62,13 +61,13 @@ public class StudentController {
         return Result.success(students);
     }
 
-    // 任务三：学生新增接口（POST）- 调用 Service 层
+    // 任务三：学生新增接口（POST）- 改用 saveStudent
     @PostMapping("/create")
-    public Result<String> createStudent(@RequestBody Student student) {
+    public Result<Student> createStudent(@RequestBody Student student) {
         try {
-            String result = studentService.createStudent(student);
-            return Result.success(result);
-        } catch (RuntimeException e) {
+            Student savedStudent = studentService.saveStudent(student);
+            return Result.success(savedStudent);
+        } catch (Exception e) {
             return Result.error(e.getMessage());
         }
     }

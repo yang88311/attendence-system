@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>用户注册</title>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial; display: flex; justify-content: center; align-items: center; height: 100vh; background: #f0f2f5; margin: 0; }
+        .register-box { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); width: 350px; }
+        h2 { text-align: center; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        .message { text-align: center; margin-top: 10px; }
+        .success { color: green; }
+        .error { color: red; }
+        a { display: block; text-align: center; margin-top: 15px; color: #007bff; }
+    </style>
+</head>
+<body>
+<div class="register-box">
+    <h2>注册新用户</h2>
+    <input type="text" id="username" placeholder="用户名">
+    <input type="password" id="password" placeholder="密码">
+    <input type="text" id="realName" placeholder="真实姓名">
+    <select id="role">
+        <option value="TEACHER">教师</option>
+        <option value="ADMIN">管理员</option>
+    </select>
+    <input type="email" id="email" placeholder="邮箱">
+    <input type="tel" id="phone" placeholder="手机号">
+    <button onclick="register()">注册</button>
+    <div id="msg" class="message"></div>
+    <a href="/login">已有账号？去登录</a>
+</div>
+
+<script>
+    async function register() {
+        const data = {
+            username: document.getElementById('username').value,
+            password: document.getElementById('password').value,
+            realName: document.getElementById('realName').value,
+            role: document.getElementById('role').value,
+            email: document.getElementById('email').value,
+            phone: document.getElementById('phone').value
+        };
+        const msg = document.getElementById('msg');
+
+        if (!data.username || !data.password || !data.realName) {
+            msg.innerText = '请填写必填项';
+            msg.className = 'message error';
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                msg.innerText = '注册成功！3秒后跳转到登录页';
+                msg.className = 'message success';
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 3000);
+            } else {
+                msg.innerText = result.message;
+                msg.className = 'message error';
+            }
+        } catch (error) {
+            msg.innerText = '注册失败，请稍后重试';
+            msg.className = 'message error';
+        }
+    }
+</script>
+</body>
+</html>

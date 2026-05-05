@@ -1,36 +1,69 @@
 package com.example.attendance.entity;
 
-// 考勤记录实体类（大驼峰类名，小驼峰属性名）
+import jakarta.persistence.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "attendance")
 public class Attendance {
-    // 属性：学号、日期、考勤状态（正常/迟到/缺勤）
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    @Column(name = "student_id", length = 20, nullable = false)
     private String studentId;
-    private String date;
+
+    @Column(name = "course_id", length = 20, nullable = false)
+    private String courseId;
+
+    @Column(name = "attendance_date", nullable = false)
+    private LocalDate attendanceDate;
+
+    @Column(name = "check_in_time")
+    private LocalDateTime checkInTime;
+
+    @Column(name = "seat_row")
+    private Byte seatRow;
+
+    @Column(name = "seat_col")
+    private Byte seatCol;
+
+    @Column(name = "status", length = 20, nullable = false)
     private String status;
-    // 无参构造器（必须）
+
+    @Column(name = "create_time")
+    private LocalDateTime createTime;
+
+    // 无参构造器
     public Attendance() {}
-    // 全参构造器（方便模拟数据）
-    public Attendance(String studentId, String date, String status) {
-        this.studentId = studentId;
-        this.date = date;
-        this.status = status;
-    }
-    // Getter 和 Setter 方法（手动编写）
-    public String getStudentId() {
-        return studentId;
-    }
-    public void setStudentId(String studentId) {
-        this.studentId = studentId;
-    }
-    public String getDate() {
-        return date;
-    }
-    public void setDate(String date) {
-        this.date = date;
-    }
-    public String getStatus() {
-        return status;
-    }
-    public void setStatus(String status) {
-        this.status = status;
-    }
+
+    // Getters and Setters
+    public Integer getId() { return id; }
+    public void setId(Integer id) { this.id = id; }
+
+    public String getStudentId() { return studentId; }
+    public void setStudentId(String studentId) { this.studentId = studentId; }
+
+    public String getCourseId() { return courseId; }
+    public void setCourseId(String courseId) { this.courseId = courseId; }
+
+    public LocalDate getAttendanceDate() { return attendanceDate; }
+    public void setAttendanceDate(LocalDate attendanceDate) { this.attendanceDate = attendanceDate; }
+
+    public LocalDateTime getCheckInTime() { return checkInTime; }
+    public void setCheckInTime(LocalDateTime checkInTime) { this.checkInTime = checkInTime; }
+
+    public Byte getSeatRow() { return seatRow; }
+    public void setSeatRow(Byte seatRow) { this.seatRow = seatRow; }
+
+    public Byte getSeatCol() { return seatCol; }
+    public void setSeatCol(Byte seatCol) { this.seatCol = seatCol; }
+
+    public String getStatus() { return status; }
+    public void setStatus(String status) { this.status = status; }
+
+    public LocalDateTime getCreateTime() { return createTime; }
+    public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
 }
