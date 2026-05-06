@@ -27,22 +27,24 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // 注册接口和注册页面允许所有人访问
-                        .requestMatchers("/api/auth/register", "/register.html").permitAll()
-                        // ========== 新增：权限控制 ==========
-                        // 只有 ADMIN 角色能访问 /api/admin/**
+                        // 静态资源、注册页面、登录页面、API接口放行
+                        .requestMatchers("/css/**", "/js/**", "/register", "/login", "/index", "/api/auth/register").permitAll()
+                        // 权限控制
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                        // ADMIN 和 TEACHER 角色都能访问 /api/teacher/**
                         .requestMatchers("/api/teacher/**").hasAnyRole("ADMIN", "TEACHER")
-                        // ========== 新增结束 ==========
-                        // 其他请求需要认证
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
-                        .permitAll()  // 使用 Spring Security 默认登录页
+                        .loginPage("/login")           // 自定义登录页
+                        .loginProcessingUrl("/doLogin") // 登录表单提交地址
+                        .defaultSuccessUrl("/index", true)  // 登录成功后跳转
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutSuccessUrl("/login?logout")
+                        .permitAll()
                 )
                 .userDetailsService(customUserDetailsService);
-
 
         return http.build();
     }
