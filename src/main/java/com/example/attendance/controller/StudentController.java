@@ -1,74 +1,61 @@
 package com.example.attendance.controller;
 
-import com.example.attendance.common.Result;
-import com.example.attendance.entity.AttendanceRecord;
 import com.example.attendance.entity.Student;
 import com.example.attendance.service.StudentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
-@RestController
+@Controller
 @RequestMapping("/student")
 public class StudentController {
 
     @Autowired
     private StudentService studentService;
 
-    // ==================== 你原来的接口（保留不变） ====================
-
-    @GetMapping("/info")
-    public String getStudentInfo() {
-        return "姓名：白景一  学号：42411045  班级：计科2班";
-    }
-
-    @PostMapping("/attendance")
-    public String attendance(@RequestBody String studentId) {
-        return "学号为 " + studentId + " 的学生打卡成功！";
-    }
-
-    @GetMapping("/courses")
-    public List<String> getCourses() {
-        List<String> courses = new ArrayList<>();
-        courses.add("Java程序设计");
-        courses.add("数据结构");
-        courses.add("数据库原理");
-        courses.add("操作系统");
-        courses.add("计算机网络");
-        return courses;
-    }
-
-    // ==================== 新增：分层架构任务接口 ====================
-
-    // 任务一：学生信息查询接口（路径参数）
-    @GetMapping("/info/{studentId}")
-    public Result<Student> getStudentInfoById(@PathVariable String studentId) {
-        Student student = studentService.getStudentById(studentId);
-        if (student == null) {
-            return Result.error("学生不存在");
-        }
-        return Result.success(student);
-    }
-
-    // 任务二：学生列表查询接口（查询参数）
+    // 学生列表（分页）
     @GetMapping("/list")
-    public Result<List<Student>> getStudentList(
-            @RequestParam String className,
-            @RequestParam(defaultValue = "1") int page) {
-        List<Student> students = studentService.getStudentsByClass(className);
-        return Result.success(students);
+    public String list(@RequestParam(defaultValue = "0") int page,
+                       @RequestParam(defaultValue = "5") int size,
+                       Model model) {
+        Page<Student> studentPage = studentService.getStudentsWithPagination(PageRequest.of(page, size));
+        model.addAttribute("students", studentPage.getContent());
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", studentPage.getTotalPages());
+        model.addAttribute("totalElements", studentPage.getTotalElements());
+        model.addAttribute("size", size);
+        return "student-list";
     }
 
-    // 任务三：学生新增接口（POST）- 改用 saveStudent
-    @PostMapping("/create")
-    public Result<Student> createStudent(@RequestBody Student student) {
-        try {
-            Student savedStudent = studentService.saveStudent(student);
-            return Result.success(savedStudent);
-        } catch (Exception e) {
-            return Result.error(e.getMessage());
-        }
+    // 新增页面
+    @GetMapping("/add")
+    public String addPage(Model model) {
+        model.addAttribute("student", new Student());
+        return "student-form";
+    }
+
+    // 编辑页面
+    @GetMapping("/edit/{id}")
+    public String editPage(@PathVariable String id, Model model) {
+        Student student = studentService.getStudentById(id);
+        model.addAttribute("student", student);
+        return "student-form";
+    }
+
+    // 保存（新增或编辑）
+    @PostMapping("/save")
+    public String save(@ModelAttribute Student student) {
+        studentService.saveStudent(student);
+        return "redirect:/student/list";
+    }
+
+    // 删除
+    @GetMapping("/delete/{id}")
+    public String delete(@PathVariable String id) {
+        studentService.deleteStudent(id);
+        return "redirect:/student/list";
     }
 }

@@ -1,6 +1,8 @@
 package com.example.attendance.service;
 
 import com.example.attendance.entity.Student;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 public interface StudentService {
@@ -19,4 +21,7 @@ public interface StudentService {
 
     // 删除学生
     void deleteStudent(String studentId);
+
+    // ========== 新增：分页查询 ==========
+    Page<Student> getStudentsWithPagination(Pageable pageable);
 }

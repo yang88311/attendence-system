@@ -27,17 +27,24 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // 静态资源、注册页面、登录页面、API接口放行
-                        .requestMatchers("/css/**", "/js/**", "/register", "/login", "/index", "/api/auth/register").permitAll()
-                        // 权限控制
+                        // 1. 放行：静态资源、登录、注册页面
+                        .requestMatchers("/css/**", "/js/**", "/webjars/**", "/register", "/login", "/api/auth/register").permitAll()
+
+                        // 2. 学生管理：所有已登录用户都可以访问
+                        .requestMatchers("/student/**").authenticated()
+
+                        // 3. API 权限控制（按需求保留）
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers("/api/teacher/**").hasAnyRole("ADMIN", "TEACHER")
+                        .requestMatchers("/api/student/**").hasAnyRole("ADMIN", "TEACHER", "STUDENT")
+
+                        // 4. 其他请求需要认证
                         .anyRequest().authenticated()
                 )
                 .formLogin(form -> form
-                        .loginPage("/login")           // 自定义登录页
-                        .loginProcessingUrl("/doLogin") // 登录表单提交地址
-                        .defaultSuccessUrl("/index", true)  // 登录成功后跳转
+                        .loginPage("/login")
+                        .loginProcessingUrl("/doLogin")
+                        .defaultSuccessUrl("/index", true)
                         .permitAll()
                 )
                 .logout(logout -> logout

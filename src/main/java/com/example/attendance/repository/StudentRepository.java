@@ -2,11 +2,12 @@ package com.example.attendance.repository;
 
 import com.example.attendance.entity.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface StudentRepository extends JpaRepository<Student, String> {
+public interface StudentRepository extends JpaRepository<Student, String>, JpaSpecificationExecutor<Student> {
 
     // 根据班级查询学生
     List<Student> findByClassName(String className);
