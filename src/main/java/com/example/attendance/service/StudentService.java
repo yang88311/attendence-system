@@ -22,6 +22,12 @@ public interface StudentService {
     // 删除学生
     void deleteStudent(String studentId);
 
-    // ========== 新增：分页查询 ==========
+    // 分页查询
     Page<Student> getStudentsWithPagination(Pageable pageable);
+
+    // ========== 新增：搜索功能 ==========
+    Page<Student> searchStudents(String keyword, Pageable pageable);
+
+    // ========== 新增：批量删除 ==========
+    void deleteStudents(List<String> studentIds);
 }

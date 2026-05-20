@@ -15,6 +15,9 @@ public class Attendance {
     @Column(name = "student_id", length = 20, nullable = false)
     private String studentId;
 
+    @Column(name = "student_name", length = 50, nullable = false)
+    private String studentName;
+
     @Column(name = "course_id", length = 20, nullable = false)
     private String courseId;
 
@@ -36,15 +39,19 @@ public class Attendance {
     @Column(name = "create_time")
     private LocalDateTime createTime;
 
-    // 无参构造器
+    @Column(name = "remark", length = 200)
+    private String remark;
+
     public Attendance() {}
 
-    // Getters and Setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
 
     public String getStudentId() { return studentId; }
     public void setStudentId(String studentId) { this.studentId = studentId; }
+
+    public String getStudentName() { return studentName; }
+    public void setStudentName(String studentName) { this.studentName = studentName; }
 
     public String getCourseId() { return courseId; }
     public void setCourseId(String courseId) { this.courseId = courseId; }
@@ -66,4 +73,7 @@ public class Attendance {
 
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
+
+    public String getRemark() { return remark; }
+    public void setRemark(String remark) { this.remark = remark; }
 }

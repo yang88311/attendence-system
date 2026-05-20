@@ -1,152 +1,155 @@
 package com.example.attendance.controller;
 
 import com.example.attendance.entity.Attendance;
+import com.example.attendance.entity.Course;
 import com.example.attendance.service.AttendanceService;
+import com.example.attendance.service.CourseService;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@RestController
-@RequestMapping("/api/attendances")
+@Controller
+@RequestMapping("/attendance")
 public class AttendanceController {
 
     @Autowired
     private AttendanceService attendanceService;
 
-    // 分页查询（支持排序）
-    @GetMapping("/page")
-    public Map<String, Object> getAttendancesByPage(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false, defaultValue = "attendanceDate") String sortBy,
-            @RequestParam(required = false, defaultValue = "desc") String direction) {
+    @Autowired
+    private CourseService courseService;
 
-        Sort sort = direction.equalsIgnoreCase("asc")
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Attendance> attendancePage = attendanceService.getAttendancesWithPagination(pageable);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", attendancePage.getContent());
-        response.put("totalElements", attendancePage.getTotalElements());
-        response.put("totalPages", attendancePage.getTotalPages());
-        response.put("currentPage", attendancePage.getNumber());
-        response.put("pageSize", attendancePage.getSize());
-        return response;
+    private String getCurrentStudentId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        return auth.getName();
     }
 
-    // 多条件动态查询（分页+排序）
-    @GetMapping("/search")
-    public Map<String, Object> searchAttendances(
-            @RequestParam(required = false) String studentId,
-            @RequestParam(required = false) String courseId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) String status,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false, defaultValue = "attendanceDate") String sortBy,
-            @RequestParam(required = false, defaultValue = "desc") String direction) {
-
-        Sort sort = direction.equalsIgnoreCase("asc")
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Attendance> attendancePage = attendanceService.searchAttendances(
-                studentId, courseId, startDate, endDate, status, pageable);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", attendancePage.getContent());
-        response.put("totalElements", attendancePage.getTotalElements());
-        response.put("totalPages", attendancePage.getTotalPages());
-        response.put("currentPage", attendancePage.getNumber());
-        response.put("pageSize", attendancePage.getSize());
-
-        // 使用 HashMap 允许 null 值
-        Map<String, Object> filters = new HashMap<>();
-        filters.put("studentId", studentId);
-        filters.put("courseId", courseId);
-        filters.put("startDate", startDate);
-        filters.put("endDate", endDate);
-        filters.put("status", status);
-        response.put("filters", filters);
-
-        return response;
+    @GetMapping("/checkIn")
+    public String checkInPage(Model model) {
+        List<Course> courses = courseService.getAllCourses();
+        model.addAttribute("courses", courses);
+        return "attendance-checkin";
     }
 
-    // 按学生ID分页查询
-    @GetMapping("/student/{studentId}/page")
-    public Map<String, Object> getByStudentWithPage(
-            @PathVariable String studentId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false, defaultValue = "attendanceDate") String sortBy,
-            @RequestParam(required = false, defaultValue = "desc") String direction) {
-
-        Sort sort = direction.equalsIgnoreCase("asc")
-                ? Sort.by(sortBy).ascending()
-                : Sort.by(sortBy).descending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<Attendance> attendancePage = attendanceService.getAttendancesByStudentWithPagination(studentId, pageable);
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("content", attendancePage.getContent());
-        response.put("totalElements", attendancePage.getTotalElements());
-        response.put("totalPages", attendancePage.getTotalPages());
-        response.put("currentPage", attendancePage.getNumber());
-        return response;
+    @PostMapping("/checkIn")
+    @ResponseBody
+    public Map<String, Object> checkIn(@RequestParam String courseId,
+                                       @RequestParam(required = false) String remark,
+                                       @RequestParam(required = false) Byte seatRow,
+                                       @RequestParam(required = false) Byte seatCol) {
+        String studentId = getCurrentStudentId();
+        return attendanceService.checkIn(studentId, courseId, remark, seatRow, seatCol);
     }
 
-    // 原有接口：查询所有
-    @GetMapping
-    public List<Attendance> getAllAttendances() {
-        return attendanceService.getAllAttendances();
+    @GetMapping("/list")
+    public String list(@RequestParam(required = false) String courseId,
+                       @RequestParam(required = false) String dateRange,
+                       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                       @RequestParam(required = false) String status,
+                       @RequestParam(defaultValue = "0") int page,
+                       @RequestParam(defaultValue = "10") int size,
+                       Model model) {
+
+        String studentId = getCurrentStudentId();
+        Pageable pageable = PageRequest.of(page, size, Sort.by("attendanceDate").descending());
+
+        Page<Attendance> attendancePage = attendanceService.filterAttendances(
+                studentId, courseId, dateRange, startDate, endDate, status, pageable);
+
+        List<Course> courses = courseService.getAllCourses();
+
+        model.addAttribute("records", attendancePage.getContent());
+        model.addAttribute("courses", courses);
+        model.addAttribute("selectedCourseId", courseId);
+        model.addAttribute("dateRange", dateRange);
+        model.addAttribute("startDate", startDate);
+        model.addAttribute("endDate", endDate);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", attendancePage.getTotalPages());
+        model.addAttribute("totalElements", attendancePage.getTotalElements());
+        model.addAttribute("size", size);
+
+        return "attendance-list";
     }
 
-    // 原有接口：根据ID查询
-    @GetMapping("/{id}")
-    public Attendance getAttendanceById(@PathVariable Integer id) {
-        return attendanceService.getAttendanceById(id);
-    }
+    @GetMapping("/export")
+    public void export(@RequestParam(required = false) String courseId,
+                       @RequestParam(required = false) String dateRange,
+                       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                       @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                       @RequestParam(required = false) String status,
+                       HttpServletResponse response) throws IOException {
 
-    // 原有接口：新增
-    @PostMapping
-    public Attendance addAttendance(@RequestBody Attendance attendance) {
-        return attendanceService.saveAttendance(attendance);
-    }
+        String studentId = getCurrentStudentId();
 
-    // 原有接口：更新
-    @PutMapping
-    public Attendance updateAttendance(@RequestBody Attendance attendance) {
-        return attendanceService.saveAttendance(attendance);
-    }
+        LocalDate filterStartDate = startDate;
+        LocalDate filterEndDate = endDate;
 
-    // 原有接口：删除
-    @DeleteMapping("/{id}")
-    public String deleteAttendance(@PathVariable Integer id) {
-        attendanceService.deleteAttendance(id);
-        return "删除成功";
-    }
+        if (dateRange != null) {
+            LocalDate today = LocalDate.now();
+            switch (dateRange) {
+                case "today":
+                    filterStartDate = today;
+                    filterEndDate = today;
+                    break;
+                case "week":
+                    filterStartDate = today.minusDays(7);
+                    filterEndDate = today;
+                    break;
+                case "month":
+                    filterStartDate = today.minusMonths(1);
+                    filterEndDate = today;
+                    break;
+            }
+        }
 
-    // 原有接口：按学生ID查询
-    @GetMapping("/student/{studentId}")
-    public List<Attendance> getByStudent(@PathVariable String studentId) {
-        return attendanceService.getAttendancesByStudent(studentId);
-    }
+        List<Attendance> records = attendanceService.getAttendancesForExport(
+                studentId, courseId, filterStartDate, filterEndDate, status);
 
-    // 原有接口：按课程ID查询
-    @GetMapping("/course/{courseId}")
-    public List<Attendance> getByCourse(@PathVariable String courseId) {
-        return attendanceService.getAttendancesByCourse(courseId);
+        response.setContentType("text/csv; charset=UTF-8");
+        response.setHeader("Content-Disposition", "attachment; filename=attendance_" +
+                LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd")) + ".csv");
+
+        PrintWriter writer = response.getWriter();
+        writer.println("日期,课程ID,打卡时间,座位号,状态,备注");
+
+        for (Attendance record : records) {
+            String dateStr = record.getAttendanceDate().toString();
+            String timeStr = record.getCheckInTime() != null ?
+                    record.getCheckInTime().toLocalTime().toString() : "";
+            String seatStr = "";
+            if (record.getSeatRow() != null && record.getSeatCol() != null) {
+                seatStr = record.getSeatRow() + "排" + record.getSeatCol() + "列";
+            }
+            String statusText = "";
+            switch (record.getStatus()) {
+                case "NORMAL": statusText = "正常"; break;
+                case "LATE": statusText = "迟到"; break;
+                default: statusText = record.getStatus();
+            }
+            String remark = record.getRemark() != null ? record.getRemark() : "";
+
+            writer.printf("%s,%s,%s,%s,%s,%s%n",
+                    dateStr, record.getCourseId(), timeStr, seatStr, statusText, remark);
+        }
+        writer.flush();
+        writer.close();
     }
 }

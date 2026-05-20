@@ -45,4 +45,17 @@ public class StudentServiceImpl implements StudentService {
     public Page<Student> getStudentsWithPagination(Pageable pageable) {
         return studentRepository.findAll(pageable);
     }
+
+    @Override
+    public Page<Student> searchStudents(String keyword, Pageable pageable) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return studentRepository.findAll(pageable);
+        }
+        return studentRepository.findByStudentIdContainingOrStudentNameContaining(keyword, keyword, pageable);
+    }
+
+    @Override
+    public void deleteStudents(List<String> studentIds) {
+        studentRepository.deleteAllById(studentIds);
+    }
 }
