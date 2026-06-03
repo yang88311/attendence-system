@@ -1,5 +1,6 @@
 package com.example.attendance.controller;
 
+import com.example.attendance.dto.ImportResult;
 import com.example.attendance.entity.Attendance;
 import com.example.attendance.entity.Course;
 import com.example.attendance.service.AttendanceService;
@@ -16,6 +17,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -40,6 +43,7 @@ public class AttendanceController {
         return auth.getName();
     }
 
+    // ========== 打卡功能 ==========
     @GetMapping("/checkIn")
     public String checkInPage(Model model) {
         List<Course> courses = courseService.getAllCourses();
@@ -57,6 +61,7 @@ public class AttendanceController {
         return attendanceService.checkIn(studentId, courseId, remark, seatRow, seatCol);
     }
 
+    // ========== 考勤记录列表 ==========
     @GetMapping("/list")
     public String list(@RequestParam(required = false) String courseId,
                        @RequestParam(required = false) String dateRange,
@@ -89,6 +94,7 @@ public class AttendanceController {
         return "attendance-list";
     }
 
+    // ========== 导出CSV ==========
     @GetMapping("/export")
     public void export(@RequestParam(required = false) String courseId,
                        @RequestParam(required = false) String dateRange,
@@ -116,6 +122,8 @@ public class AttendanceController {
                 case "month":
                     filterStartDate = today.minusMonths(1);
                     filterEndDate = today;
+                    break;
+                default:
                     break;
             }
         }
@@ -151,5 +159,57 @@ public class AttendanceController {
         }
         writer.flush();
         writer.close();
+    }
+
+    // ========== 批量导入功能 ==========
+    @GetMapping("/import")
+    public String importPage() {
+        return "attendance-import";
+    }
+
+    @PostMapping("/import")
+    public String importFile(@RequestParam("file") MultipartFile file,
+                             RedirectAttributes redirectAttributes) {
+        if (file.isEmpty()) {
+            redirectAttributes.addFlashAttribute("error", "请选择文件");
+            return "redirect:/attendance/import";
+        }
+
+        String filename = file.getOriginalFilename();
+        if (filename == null || (!filename.endsWith(".xlsx") && !filename.endsWith(".xls"))) {
+            redirectAttributes.addFlashAttribute("error", "请上传Excel文件（.xlsx或.xls）");
+            return "redirect:/attendance/import";
+        }
+
+        try {
+            ImportResult result = attendanceService.importFromExcel(file);
+            redirectAttributes.addFlashAttribute("success",
+                    "导入完成！成功: " + result.getSuccessCount() + "条，失败: " + result.getFailCount() + "条");
+
+            if (result.getFailCount() > 0) {
+                redirectAttributes.addFlashAttribute("hasErrors", true);
+                redirectAttributes.addFlashAttribute("errors", result.getErrorMessages());
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "导入失败: " + e.getMessage());
+        }
+
+        return "redirect:/attendance/import";
+    }
+
+    @GetMapping("/export-error-report")
+    public void exportErrorReport(@SessionAttribute(value = "errors", required = false) List<String> errors,
+                                  HttpServletResponse response) throws IOException {
+        if (errors == null || errors.isEmpty()) {
+            response.setContentType("text/plain; charset=UTF-8");
+            response.getWriter().println("无错误记录");
+            return;
+        }
+        attendanceService.exportErrorReport(errors, response);
+    }
+
+    @GetMapping("/download-template")
+    public void downloadTemplate(HttpServletResponse response) throws IOException {
+        attendanceService.downloadTemplate(response);
     }
 }
